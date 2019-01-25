@@ -2,13 +2,12 @@ import sys
 import os
 import numpy as np
 
-"""
-Author: Vilhjalmur Asgeirsson (UI, 2018)
-"""
-
-
 def Displacement(ndim, nim, R):
 
+    """
+    Computes straight line distances between adjacent pair of images
+    and then sums up the distances
+    """
     displ = np.zeros(shape=(nim,))
     for i in range(1, nim):
         R0 = R[(i - 1) * ndim:(i) * ndim]
@@ -20,6 +19,9 @@ def Displacement(ndim, nim, R):
 
 def LinearInterpolateData(nlen, xData, yData, xnew):
 
+    """
+    Linear interpolation of data points (xData, yData) to point xnew
+    """
     i = 0
     if (xnew >= xData[nlen - 2]):
         i = nlen - 2
@@ -43,6 +45,10 @@ def LinearInterpolateData(nlen, xData, yData, xnew):
 
 def GenerateNewPath(ndim, nim, npoints, S, R):
 
+    """
+    Generates new path, newR of npoints images, from path R with nim images
+    """
+    
     newR = np.zeros(shape=(ndim * npoints, 1))
     xi = np.linspace(S[0], S[-1], npoints)
 
@@ -134,45 +140,69 @@ def ReadTraj(fname):
 if __name__ == "__main__":
 
     """
-    Script to extend a trajectory from ORCA NEB run to include more/less images
-    by using simple linear interpolation. New number of images is given by 
-    the variable npts
+    Script to extend a trajectory from ORCA NEB run to redistribute or 
+    include more/less images by linear interpolation. 
+    New number of images is given by the variable npts
 
     requires: numpy
 
     Usage: python neb_interpolate_path.py basename_MEP.trj npts<int>
     (in the given order)
 
-    Authors: Vilhjalmur Asgeirsson (UI, 2018)
+    Author: Vilhjalmur Asgeirsson (UI, 2018)
+
+    modified: 25.01.2019
     """
 
     # ============================================
+    # Print header
+    # ============================================
+    print('=============================================')
+    print('     Linear interpolation of a trajectory    ')
+    print('=============================================')
+    print('Modified: 25.01.2019')
+    print(' ')
+    
+    # ============================================
     # default values
     # ============================================
-    
     fname = 'orca_MEP.trj'
     npts = 100
-
     # ============================================
     # Get inp arguments
     # ============================================
     
+    # Notice that the order of the arguments matters.
     for i in range(len(sys.argv)):
         if i == 1:
             fname = sys.argv[1]
         if i == 2:
             try:
-                npts  = int(sys.argv[2])
+                npts = int(sys.argv[2])
             except:
                 raise TypeError("Int. expected as a second arg")
-        
+
+
+    
+    file_extension = fname.split('.')[1]
     # ============================================
     # Read trajectory file
     # ============================================
-    basename = fname.split('.')[0]
-    fname_output = basename+'_extended.xyz'
-    R, ndim, nim, symb3 = ReadTraj(fname)
+    name_string = fname.split('.')
+    basename = name_string[0]
+    file_extension = name_string[1]
     
+    R, ndim, nim, symb3 = ReadTraj(fname)
+    print '--Found %i images with %i atoms' %  (nim, ndim/3)
+    print '--Interpolating to %i points' % (npts)
+    if npts > nim:
+        fname_output = basename+'_exte.'+file_extension
+    elif npts == nim:
+        fname_output = basename+'_redistri.'+file_extension
+    else:
+        fname_output = basename+'_reduc.'+file_extension
+    print '--output file: %s' % fname_output
+
     # ============================================
     # Perform interpolation
     # ============================================
@@ -184,5 +214,4 @@ if __name__ == "__main__":
     # ============================================
     E = np.zeros(shape=(npts,1))
     WriteTraj(fname_output, ndim, npts, newR, E, symb3)
-
-    # Done.
+    print 'Done.'
